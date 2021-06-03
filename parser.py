@@ -97,7 +97,7 @@ def acrescentaVisitados(rua1, rua2, tipo):
     if tipo not in visitados:
         visitados[tipo] = list()
     visitados[tipo].append(
-        (rua, l, calculaDistancia(res[tipo][rua1][0], res[tipo][rua1][1], res[tipo][rua2][0], res[tipo][rua2][1])))
+        (rua, rua2, calculaDistancia(res[tipo][rua1][0], res[tipo][rua1][1], res[tipo][rua2][0], res[tipo][rua2][1])))
 
 def inVis(rua, tipo):
     if tipo in vis:
@@ -137,7 +137,7 @@ for tipo in res:
                     + '\'' + rua2 + '\','
                     + str(distancia) + ','
                     + '\'' + tipo + '\''
-                    + ')\n')
+                    + ').\n')
 
 fa.close()
 
