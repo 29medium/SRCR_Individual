@@ -59,6 +59,23 @@ primeiroprofundidadeCusto(Nodo,Historico,[NodoProx|Caminho],Custo):-
     primeiroprofundidadeCusto(NodoProx,[NodoProx|Historico],Caminho,Custo2),
     Custo is CustoMovimento + Custo2.
 
+% Tipo de Lixo
+
+resolveDPTiposAll(L,T):- findall((S,C), (resolveDPTipos(S, T)),L).
+
+resolveDPTipos([Nodo|Caminho], Tipo):-
+    inicio(Nodo),
+    depthFirstT(Nodo,[Nodo],Caminho, Tipo).
+
+depthFirstT(Nodo,_,[], Tipo):-
+    fim(Nodo).
+
+depthFirstT(Nodo, Historico, [NodoProx|Caminho], Tipo):-
+    getLixo(NodoProx, Tipo),
+    getArco(Nodo, NodoProx,_),
+    nao(membro(NodoProx, Historico)),
+    depthFirstT(NodoProx, [NodoProx|Historico], Caminho, Tipo).
+
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 % BREADTH-FIRST SEARCH
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
@@ -148,6 +165,24 @@ primeiroprofundidadeCustoLimit(Nodo,Historico,[NodoProx|Caminho],Custo, Maxcusto
     nao(membro(NodoProx, Historico)),
     primeiroprofundidadeCustoLimit(NodoProx,[NodoProx|Historico],Caminho,Custo2,Max1),
     Custo is CustoMovimento + Custo2.
+
+% Tipos
+
+resolveDPlimitadaTipo(Solucao,L, Tipo) :-
+    inicio(No),
+    depthFirstLimitedT([],No,Sol,L,Tipo),
+    reverseL(Sol,Solucao).
+
+depthFirstLimitedT(Caminho,No,[No|Caminho],L, Tipo) :-
+    fim(No),!.
+
+depthFirstLimitedT(Caminho,No,S,L,Tipo) :-
+    L > 0,
+    getLixo(No1, Tipo),
+    getArco(No,No1,_),
+    nao(membro(No1,Caminho)),
+    L1 is L - 1,
+    depthFirstLimitedT([No|Caminho],No1,S,L1,Tipo).
 
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 % PROCURA INFORMADA
@@ -259,6 +294,8 @@ seleciona(E, [X|Xs], [X|Ys]) :- seleciona(E, Xs, Ys).
 getArco(Origem, Destino, Custo) :- arco(Origem, Destino, Custo).
 
 getPonto(Rua, Latitude, Longitude, Adjacentes, Lixo, Capacidade) :- ponto(Rua, Latitude, Longitude, Adjacentes, Lixo, Capacidade).
+
+getLixo(Rua, Tipo) :- ponto(Rua,_,_,_,Lixo,_).
 
 pontosL :- listing(ponto).
 
