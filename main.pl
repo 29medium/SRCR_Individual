@@ -27,6 +27,8 @@ fim('R Ribeira Nova').
 
 % Arcos
 
+ppArcoTodasSolucoes(L):- findall((S,C),(resolvePPArco(S,C)),L).
+
 resolvePPArco([Nodo|Caminho],Custo):-
     inicio(Nodo),
     primeiroprofundidadeArco(Nodo,[Nodo],Caminho,Custo).
@@ -35,17 +37,14 @@ primeiroprofundidadeArco(Nodo, _, [], 0):-
     fim(Nodo).
 
 primeiroprofundidadeArco(Nodo,Historico,[NodoProx|Caminho],Custo):-
-    adjacenteArco(Nodo,NodoProx,CustoMovimento),
+    getArco(Nodo, NodoProx, _),
     nao(membro(NodoProx, Historico)),
     primeiroprofundidadeArco(NodoProx,[NodoProx|Historico],Caminho,Custo2),
-    Custo is CustoMovimento + Custo2.
-
-adjacenteArco(Nodo, NodoProx, 1):-
-    getArco(Nodo, NodoProx, _).
-
-ppArcoTodasSolucoes(L):- findall((S,C),(resolvePPArco(S,C)),L).
+    Custo is Custo2 + 1.
 
 % Custos
+
+ppCustoTodasSolucoes(L):- findall((S,C),(resolvePPCusto(S,C)),L).
 
 resolvePPCusto([Nodo|Caminho],Custo):-
     inicio(Nodo),
@@ -55,15 +54,10 @@ primeiroprofundidadeCusto(Nodo, _, [], 0):-
     fim(Nodo).
 
 primeiroprofundidadeCusto(Nodo,Historico,[NodoProx|Caminho],Custo):-
-    adjacenteCusto(Nodo,NodoProx,CustoMovimento),
+    getArco(Nodo, NodoProx, CustoMovimento),
     nao(membro(NodoProx, Historico)),
     primeiroprofundidadeCusto(NodoProx,[NodoProx|Historico],Caminho,Custo2),
     Custo is CustoMovimento + Custo2.
-
-adjacenteCusto(Nodo, NodoProx, Custo):-
-    getArco(Nodo, NodoProx, Custo).
-
-ppCustoTodasSolucoes(L):- findall((S,C),(resolvePPCusto(S,C)),L).
 
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 % BREADTH-FIRST SEARCH
@@ -72,6 +66,25 @@ ppCustoTodasSolucoes(L):- findall((S,C),(resolvePPCusto(S,C)),L).
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 % BUSCA ITERATIVA LIMITADA EM PROFUNDIDADE
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
+
+% Arcos
+
+ppArcoTodasSolucoesLimit(Maxdepth,L):- findall((S,C),(resolvePPArcoLimit(S,C,Maxdepth)),L).
+
+resolvePPArcoLimit([Nodo|Caminho],Custo,Maxdepth):-
+    inicio(Nodo),
+    primeiroprofundidadeArcoLimit(Nodo,[Nodo],Caminho,Custo,Maxdepth).
+
+primeiroprofundidadeArcoLimit(Nodo, _, [], 0,_):-
+    fim(Nodo).
+
+primeiroprofundidadeArcoLimit(Nodo,Historico,[NodoProx|Caminho],Custo,Maxdepth):-
+    Maxdepth > 0,   
+    getArco(Nodo, NodoProx, _),
+    nao(membro(NodoProx, Historico)),
+    Max1 is Maxdepth - 1,
+    primeiroprofundidadeArcoLimit(NodoProx,[NodoProx|Historico],Caminho,Custo2,Max1),
+    Custo is Custo2 + 1.
 
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 % PROCURA INFORMADA
@@ -144,8 +157,7 @@ expandeGulosa(Caminho, ExpCaminhos) :-
 	findall(NovoCaminho, adjacenteG(Caminho,NovoCaminho), ExpCaminhos).
 
 adjacenteG([Nodo|Caminho]/Custo/_, [ProxNodo,Nodo|Caminho]/NovoCusto/Est) :-
-    getArco(Nodo, ProxNodo, PassoCusto)
-    \+ member(ProxNodo, Caminho),
+    %getArco(Nodo, ProxNodo, PassoCusto),ß\+ member(ProxNodo, Caminho),
 	NovoCusto is Custo + PassoCusto,
 	estimativa(ProxNodo, Est).
 
