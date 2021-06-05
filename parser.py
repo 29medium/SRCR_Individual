@@ -15,7 +15,7 @@ dataset['PONTO_RECOLHA_FREGUESIA'] = dataset['PONTO_RECOLHA_FREGUESIA'].str.norm
 dataset['PONTO_RECOLHA_LOCAL'] = dataset['PONTO_RECOLHA_LOCAL'].str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
 dataset['CONTENTOR_RESÍDUO'] = dataset['CONTENTOR_RESÍDUO'].str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
 
-recolhaRE = re.compile(r'([a-zA-Z ]+)(\(.+\))?')
+recolhaRE = re.compile(r'[0-9]+: ([a-zA-Z0-9, ]+)(\(.+\))?')
 
 for i in range(0, dataset['OBJECTID'].size - 1):
     tipo = dataset["CONTENTOR_RESÍDUO"][i]
@@ -27,28 +27,30 @@ for i in range(0, dataset['OBJECTID'].size - 1):
     rua = recolha[0].strip()
     
     if rua not in res[tipo]:
-        res[tipo][rua] = [None, None, None, None]
+        res[tipo][rua] = [None, None, list(), None]
         res[tipo][rua][0] = dataset["Latitude"][i]
         res[tipo][rua][1] = dataset["Longitude"][i]
-
-        if recolha[1]:
-            lixo = re.search(r':(.+)\)', recolha[1]).groups()
-            ligacoes = re.split(r' - ', lixo[0].strip())
-            
-            if ligacoes:
-                temp = set()
-                for l in ligacoes:
-                    temp.add(l)
-                res[tipo][rua][2] = list(temp)
-        
         res[tipo][rua][3] = dataset["CONTENTOR_TOTAL_LITROS"][i]
 
-        res['Geral'][rua] = [None, None, None, None]
+    if rua not in res['Geral']:
+        res['Geral'][rua] = [None, None, list(), None]
         res['Geral'][rua][0] = dataset["Latitude"][i]
         res['Geral'][rua][1] = dataset["Longitude"][i]
-        res['Geral'][rua][2] = list(temp)
         res['Geral'][rua][3] = dataset["CONTENTOR_TOTAL_LITROS"][i]
 
+    if recolha[1]:
+        lixo = re.search(r':(.+)\)', recolha[1]).groups()
+        ligacoes = re.split(r' - ', lixo[0].strip())
+
+        for l in ligacoes:
+            newl = re.match(r'[a-zA-Z0-9, ]+', l).group(0).strip()
+
+            if newl not in res[tipo][rua][2]:
+                res[tipo][rua][2].append(newl)
+
+            if newl not in res['Geral'][rua][2]:
+                res['Geral'][rua][2].append(newl)
+        
 # Pontos
 
 fp = open("pontos.pl", "w")
@@ -95,23 +97,20 @@ def inArcos(rua, l):
         if (rua == rua1 and l == rua2) or (rua == rua2 and l == rua1):
             return True
 
-    return False
-
-def arcosRec(rua, lista):
-    if lista:
-        for l in lista:
-            if l in res['Geral'] and not inArcos(rua, l):
-                arcos.append((rua, l))
-                distancia = calculaDistancia(
-                    res['Geral'][rua][0], res['Geral'][rua][1], res['Geral'][l][0], res['Geral'][l][1])
-                fa.write('arco(\'' + rua + '\',' + '\'' +
-                            l + '\',' + str(distancia) + ').\n')
+    return False    
 
 fa.write('%%arco(Ponto1,Ponto2,Distancia)\n')
 
 arcos = list()
 
 for rua, info in res['Geral'].items():
-    arcosRec(rua, info[2])
+    if info[2]:
+        for l in info[2]:
+            if l in res['Geral'] and not inArcos(rua, l):
+                arcos.append((rua, l))
+                distancia = calculaDistancia(
+                    res['Geral'][rua][0], res['Geral'][rua][1], res['Geral'][l][0], res['Geral'][l][1])
+                fa.write('arco(\'' + rua + '\',' + '\'' +
+                         l + '\',' + str(distancia) + ').\n')
 
 fa.close()

@@ -89,16 +89,21 @@ bfsArcos(Cam,Arcos):-
     fim(Dest),
     bfsArcos2(Dest,[[Orig]],Cam,Arcos).
     
-bfsArcos2(Dest,[[Dest|T]|_],Cam,0):-
-    inverso([Dest|T],Cam).
+bfsArcos2(Dest,[[Dest|T]|_],Cam,Arcos):-
+    inversoArcos([Dest|T],Cam,Arcos2),
+    Arcos is Arcos2 - 1.
     
 bfsArcos2(Dest,[LA|Outros],Cam,Arcos):-
     LA=[Act|_],
     findall([X|LA],(Dest\==Act,getArco(Act,X,_),nao(membro(X,LA))),Novos),
     append(Outros,Novos,Todos),
-    escrever(Todos),
-    bfsArcos2(Dest,Todos,Cam,Arcos2),
-    Arcos is 1 + Arcos2.
+    bfsArcos2(Dest,Todos,Cam,Arcos).
+
+inversoArcos(Xs,Ys,Arcos) :- inversoArcos(Xs,[],Ys,Arcos).
+inversoArcos([],Xs,Xs,0).
+inversoArcos([X|Xs],Ys,Zs,Arcos) :- 
+    inversoArcos(Xs,[X|Ys],Zs,Arcos2),
+    Arcos is Arcos2 + 1.
 
 % Custos
 
