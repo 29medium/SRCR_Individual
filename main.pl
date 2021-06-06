@@ -14,8 +14,24 @@
 % DADOS
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 
-inicio('R Moeda').
-fim('R Ribeira Nova').
+inicio('Tv Ribeira Nova').
+fim('Av 24 de Julho').
+
+%--------------------------------- - - - - - - - - - -  -  -  -  -   -
+% QUERIES
+%--------------------------------- - - - - - - - - - -  -  -  -  -   -
+
+% Querie 2
+maisPontosRecolha(Tipo, L) :- dfsTipoTotal(R), maximo(R,L).
+
+% Querie 3
+
+
+% Querie 4
+circuitoMaisRapido(L) :- bfsCustoTotal(R), minimo(R,L).
+
+% Querie 5
+circuitoMaisEficiente(L) :- dfsArcosTotal(R), minimo(R, L).
 
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 % PROCURA NÃO INFORMADA
@@ -27,54 +43,72 @@ fim('R Ribeira Nova').
 
 % Arcos
 
-ppArcoTodasSolucoes(L):- findall((S,C),(resolvePPArco(S,C)),L).
+dfsArcosTotal(L):- findall((S,C),(dfsArcos(S,C)),L).
 
-resolvePPArco([Nodo|Caminho],Custo):-
+dfsArcos([Nodo|Caminho],Custo):-
     inicio(Nodo),
-    primeiroprofundidadeArco(Nodo,[Nodo],Caminho,Custo).
+    dfsArcos2(Nodo,[Nodo],Caminho,Custo).
 
-primeiroprofundidadeArco(Nodo, _, [], 0):-
+dfsArcos2(Nodo, _, [], 0):-
     fim(Nodo).
 
-primeiroprofundidadeArco(Nodo,Historico,[NodoProx|Caminho],Custo):-
+dfsArcos2(Nodo,Historico,[NodoProx|Caminho],Custo):-
     getArco(Nodo, NodoProx, _),
     nao(membro(NodoProx, Historico)),
-    primeiroprofundidadeArco(NodoProx,[NodoProx|Historico],Caminho,Custo2),
+    dfsArcos2(NodoProx,[NodoProx|Historico],Caminho,Custo2),
     Custo is Custo2 + 1.
 
 % Custos
 
-ppCustoTodasSolucoes(L):- findall((S,C),(resolvePPCusto(S,C)),L).
+dfsCustoTotal(L):- findall((S,C),(dfsCusto(S,C)),L).
 
-resolvePPCusto([Nodo|Caminho],Custo):-
+dfsCusto([Nodo|Caminho],Custo):-
     inicio(Nodo),
-    primeiroprofundidadeCusto(Nodo,[Nodo],Caminho,Custo).
+    dfsCusto2(Nodo,[Nodo],Caminho,Custo).
 
-primeiroprofundidadeCusto(Nodo, _, [], 0):-
+dfsCusto2(Nodo, _, [], 0):-
     fim(Nodo).
 
-primeiroprofundidadeCusto(Nodo,Historico,[NodoProx|Caminho],Custo):-
+dfsCusto2(Nodo,Historico,[NodoProx|Caminho],Custo):-
     getArco(Nodo, NodoProx, CustoMovimento),
     nao(membro(NodoProx, Historico)),
-    primeiroprofundidadeCusto(NodoProx,[NodoProx|Historico],Caminho,Custo2),
+    dfsCusto2(NodoProx,[NodoProx|Historico],Caminho,Custo2),
     Custo is CustoMovimento + Custo2.
 
 % Tipo de Lixo
 
-resolveDPTiposAll(L,T):- findall((S,C), (resolveDPTipos(S, T)),L).
+dfsTipoTotal(L,T):- findall((S,C), (dfsTipo(S, T), length(S,C)),L).
 
-resolveDPTipos([Nodo|Caminho], Tipo):-
+dfsTipo([Nodo|Caminho], Tipo):-
     inicio(Nodo),
-    depthFirstT(Nodo,[Nodo],Caminho, Tipo).
+    dfsTipo2(Nodo,[Nodo],Caminho, Tipo).
 
-depthFirstT(Nodo,_,[], Tipo):-
+dfsTipo2(Nodo,_,[], Tipo):-
     fim(Nodo).
 
-depthFirstT(Nodo, Historico, [NodoProx|Caminho], Tipo):-
+dfsTipo2(Nodo, Historico, [NodoProx|Caminho], Tipo):-
     getLixo(NodoProx, Tipo),
     getArco(Nodo, NodoProx,_),
     nao(membro(NodoProx, Historico)),
-    depthFirstT(NodoProx, [NodoProx|Historico], Caminho, Tipo).
+    dfsTipo2(NodoProx, [NodoProx|Historico], Caminho, Tipo).
+
+% Quantidade
+
+dfsQuantidadeTotal(L):- findall((S,C),(dfsQuantidade(S,C)),L).
+
+dfsQuantidade([Nodo|Caminho],Quantidade):-
+    inicio(Nodo),
+    dfsQuantidade2(Nodo,[Nodo],Caminho,Quantidade).
+
+dfsQuantidade2(Nodo, _, [], 0):-
+    fim(Nodo).
+
+dfsQuantidade2(Nodo,Historico,[NodoProx|Caminho],Quantidade):-
+    getArco(Nodo, NodoProx, CustoMovimento),
+    getPonto(NodoProx, _, _, _, _, QuantidadeMovimento),
+    nao(membro(NodoProx, Historico)),
+    dfsQuantidade2(NodoProx,[NodoProx|Historico],Caminho,Quantidade2),
+    Quantidade is QuantidadeMovimento + Quantidade2.
 
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 % BREADTH-FIRST SEARCH
@@ -82,7 +116,7 @@ depthFirstT(Nodo, Historico, [NodoProx|Caminho], Tipo):-
 
 % Arcos
 
-bfsTotalArcos(L):- findall((S,C),(bfsArcos(S,C)),L).
+bfsArcosTotal(L):- findall((S,C),(bfsArcos(S,C)),L).
 
 bfsArcos(Cam,Arcos):-
     inicio(Orig),
@@ -107,21 +141,21 @@ inversoArcos([X|Xs],Ys,Zs,Arcos) :-
 
 % Custos
 
-bfsTotal(L):- findall((S,C),(bfs(S,C)),L).
+bfsCustoTotal(L):- findall((S,C),(bfsCusto(S,C)),L).
 
-bfs(Cam,Custo):-
+bfsCusto(Cam,Custo):-
     inicio(Orig),
     fim(Dest),
-    bfs2(Dest,[[Orig/0]],Cam,Custo).
+    bfsCusto2(Dest,[[Orig/0]],Cam,Custo).
     
-bfs2(Dest,[[Dest/C|T]|_],Cam,Custo):-
+bfsCusto2(Dest,[[Dest/C|T]|_],Cam,Custo):-
     inversoCusto([Dest/C|T],Cam,Custo).
     
-bfs2(Dest,[LA|Outros],Cam,Custo):-
+bfsCusto2(Dest,[LA|Outros],Cam,Custo):-
     LA=[Act/_|_],
     findall([X/CustoMovimento|LA],(Dest\==Act,getArco(Act,X,CustoMovimento),nao(membro(X/CustoMovimento,LA))),Novos),
     append(Outros,Novos,Todos),
-    bfs2(Dest,Todos,Cam,Custo).
+    bfsCusto2(Dest,Todos,Cam,Custo).
 
 inversoCusto(Xs,Ys,Custo) :- inversoCusto(Xs,[],Ys,Custo).
 inversoCusto([],Xs,Xs,0).
@@ -233,8 +267,8 @@ expandeAEstrela(Caminho, ExpCaminhos) :-
 
 resolveGulosa(Caminho/Custo) :-
     inicio(Nodo),
-    getPonto(Nodo, _, _, _, _, Capacidade),
-    agulosa([[Nodo]/0/Capacidade], CaminhoInverso/Custo/_),
+    estimativa(Nodo, Est),
+    agulosa([[Nodo]/0/Est], CaminhoInverso/Custo/_),
     inverso(CaminhoInverso, Caminho).
 
 agulosa(Caminhos, Caminho) :-
@@ -261,11 +295,22 @@ obtem_melhor_g([_|Caminhos], MelhorCaminho) :-
 expandeGulosa(Caminho, ExpCaminhos) :-
 	findall(NovoCaminho, adjacenteG(Caminho,NovoCaminho), ExpCaminhos).
 
-adjacenteG([Nodo|Caminho]/Custo/_, [ProxNodo,Nodo|Caminho]/NovoCusto/Capacidade) :-
+adjacenteG([Nodo|Caminho]/Custo/_, [ProxNodo,Nodo|Caminho]/NovoCusto/Est) :-
     getArco(Nodo, ProxNodo, PassoCusto),
     nao(member(ProxNodo, Caminho)),
 	NovoCusto is Custo + PassoCusto,
-	getPonto(Nodo, _, _, _, _, Capacidade).
+    estamativa(ProxNodo, Est).
+
+estimativa(Local,Est) :- 
+    ponto(Local,Lat1,Lon1,_,_,_),
+    fim(Destino),
+    ponto(Destino,Lat2,Lon2,_,_,_),
+    R is 6373.0,
+    Dlon is Lon2 - Lon1,
+    Dlat is Lat2 - Lat1,
+    A is sin(Dlat / 2)**2 + cos(Lat1) * cos(Lat2) * sin(Dlon / 2)**2,
+    C is 2 * atan2(sqrt(A), sqrt(1 - A)),
+    Est is C * R.
 
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 % PREDICADOS AUXILIARES
@@ -289,9 +334,13 @@ nao( Questao ).
 escrever([]).
 escrever([X|L]) :- write(X),nl,escrever(L).
 
-minimo([(P,X)],(P,X)).
-minimo([(P,X)|L],(Py,Y)):- minimo(L,(Py,Y)), X>Y.
-minimo([(Px,X)|L],(Px,X)):- minimo(L,(Py,Y)), X=<Y.
+minimo(L, (A,B)) :-
+    seleciona((A,B), L, R),
+    \+ (membro((A1,B1), R), B1 < B).
+
+maximo(L, (A,B)) :-
+    seleciona((A,B), L, R),
+    \+ (membro((A1,B1), R), B1 > B).
 
 seleciona(E, [E|Xs], Xs).
 seleciona(E, [X|Xs], [X|Ys]) :- seleciona(E, Xs, Ys).
