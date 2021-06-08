@@ -22,10 +22,10 @@ fim('Av 24 de Julho').
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 
 % Querie 2
-maisPontosRecolha(Tipo, L) :- dfsTipoTotal(R), maximo(R,L).
+maisPontosRecolha(Tipo, L) :- dfsTipoTotal(R, Tipo), maximo(R,L).
 
 % Querie 3
-
+maisProdutividade(Tipo, L) :- dfsQuantidadeTotal(R, Tipo), maximo(R,L).
 
 % Querie 4
 circuitoMaisRapido(L) :- bfsCustoTotal(R), minimo(R,L).
@@ -77,37 +77,39 @@ dfsCusto2(Nodo,Historico,[NodoProx|Caminho],Custo):-
 
 % Tipo de Lixo
 
-dfsTipoTotal(L,T):- findall((S,C), (dfsTipo(S, T), length(S,C)),L).
+dfsTipoTotal(L,T):- findall((S,C), (dfsTipo(S, C, T)),L).
 
-dfsTipo([Nodo|Caminho], Tipo):-
+dfsTipo([Nodo|Caminho], Arcos, Tipo):-
     inicio(Nodo),
-    dfsTipo2(Nodo,[Nodo],Caminho, Tipo).
+    dfsTipo2(Nodo,[Nodo],Caminho, Tipo, Arcos).
 
-dfsTipo2(Nodo,_,[], Tipo):-
+dfsTipo2(Nodo,_,[], Tipo, 0):-
     fim(Nodo).
 
-dfsTipo2(Nodo, Historico, [NodoProx|Caminho], Tipo):-
+dfsTipo2(Nodo, Historico, [NodoProx|Caminho], Tipo, Arcos):-
     getLixo(NodoProx, Tipo),
     getArco(Nodo, NodoProx,_),
     nao(membro(NodoProx, Historico)),
-    dfsTipo2(NodoProx, [NodoProx|Historico], Caminho, Tipo).
+    dfsTipo2(NodoProx, [NodoProx|Historico], Caminho, Tipo, Arcos2),
+    Arcos is Arcos2 + 1.
 
 % Quantidade
 
-dfsQuantidadeTotal(L):- findall((S,C),(dfsQuantidade(S,C)),L).
+dfsQuantidadeTotal(L, T):- findall((S,C),(dfsQuantidade(S,C,T)),L).
 
-dfsQuantidade([Nodo|Caminho],Quantidade):-
+dfsQuantidade([Nodo|Caminho],Quantidade,Tipo):-
     inicio(Nodo),
-    dfsQuantidade2(Nodo,[Nodo],Caminho,Quantidade).
+    dfsQuantidade2(Nodo,[Nodo],Caminho,Quantidade,Tipo).
 
-dfsQuantidade2(Nodo, _, [], 0):-
+dfsQuantidade2(Nodo, _, [], 0,Tipo):-
     fim(Nodo).
 
-dfsQuantidade2(Nodo,Historico,[NodoProx|Caminho],Quantidade):-
+dfsQuantidade2(Nodo,Historico,[NodoProx|Caminho],Quantidade, Tipo):-
+    getLixo(NodoProx, Tipo),
     getArco(Nodo, NodoProx, CustoMovimento),
     getPonto(NodoProx, _, _, _, _, QuantidadeMovimento),
     nao(membro(NodoProx, Historico)),
-    dfsQuantidade2(NodoProx,[NodoProx|Historico],Caminho,Quantidade2),
+    dfsQuantidade2(NodoProx,[NodoProx|Historico],Caminho,Quantidade2,Tipo),
     Quantidade is QuantidadeMovimento + Quantidade2.
 
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
@@ -169,59 +171,60 @@ inversoCusto([X/C|Xs],Ys,Zs,Custo) :-
 
 % Arcos
 
-ppArcoTodasSolucoesLimit(Maxdepth,L):- findall((S,C),(resolvePPArcoLimit(S,C,Maxdepth)),L).
+dfsArcosTotalLimit(Maxdepth,L):- findall((S,C),(dfsArcosLimit(S,C,Maxdepth)),L).
 
-resolvePPArcoLimit([Nodo|Caminho],Custo,Maxdepth):-
+dfsArcosLimit([Nodo|Caminho],Custo,Maxdepth):-
     inicio(Nodo),
-    primeiroprofundidadeArcoLimit(Nodo,[Nodo],Caminho,Custo,Maxdepth).
+    dfsArcos2Limit(Nodo,[Nodo],Caminho,Custo,Maxdepth).
 
-primeiroprofundidadeArcoLimit(Nodo, _, [], 0,_):-
+dfsArcos2Limit(Nodo, _, [], 0,_):-
     fim(Nodo).
 
-primeiroprofundidadeArcoLimit(Nodo,Historico,[NodoProx|Caminho],Custo,Maxdepth):-
+dfsArcos2Limit(Nodo,Historico,[NodoProx|Caminho],Custo,Maxdepth):-
     Maxdepth > 0,   
     getArco(Nodo, NodoProx, _),
     nao(membro(NodoProx, Historico)),
     Max1 is Maxdepth - 1,
-    primeiroprofundidadeArcoLimit(NodoProx,[NodoProx|Historico],Caminho,Custo2,Max1),
+    dfsArcos2Limit(NodoProx,[NodoProx|Historico],Caminho,Custo2,Max1),
     Custo is Custo2 + 1.
 
 % Custos
 
-ppCustoTodasSolucoesLimit(Maxcusto, L):- findall((S,C),(resolvePPCustoLimit(S,C, Maxcusto)),L).
+dfsCustoTotalLimit(Maxcusto, L):- findall((S,C),(dfsCustoLimit(S,C, Maxcusto)),L).
 
-resolvePPCustoLimit([Nodo|Caminho],Custo, Maxcusto):-
+dfsCustoLimit([Nodo|Caminho],Custo, Maxcusto):-
     inicio(Nodo),
-    primeiroprofundidadeCustoLimit(Nodo,[Nodo],Caminho,Custo, Maxcusto).
+    dfsCusto2Limit(Nodo,[Nodo],Caminho,Custo, Maxcusto).
 
-primeiroprofundidadeCustoLimit(Nodo, _, [], 0, _):-
+dfsCusto2Limit(Nodo, _, [], 0, _):-
     fim(Nodo).
 
-primeiroprofundidadeCustoLimit(Nodo,Historico,[NodoProx|Caminho],Custo, Maxcusto):-
+dfsCusto2Limit(Nodo,Historico,[NodoProx|Caminho],Custo, Maxcusto):-
     getArco(Nodo, NodoProx, CustoMovimento),
     Max1 is Maxcusto - CustoMovimento,
     Max1 > 0,
     nao(membro(NodoProx, Historico)),
-    primeiroprofundidadeCustoLimit(NodoProx,[NodoProx|Historico],Caminho,Custo2,Max1),
+    dfsCusto2Limit(NodoProx,[NodoProx|Historico],Caminho,Custo2,Max1),
     Custo is CustoMovimento + Custo2.
 
 % Tipos
 
-resolveDPlimitadaTipo(Solucao,L, Tipo) :-
-    inicio(No),
-    depthFirstLimitedT([],No,Sol,L,Tipo),
-    reverseL(Sol,Solucao).
+dfsTipoTotalLimit(L,Max,T):- findall(S, (dfsTipoLimit(S, T, Max)),L).
 
-depthFirstLimitedT(Caminho,No,[No|Caminho],L, Tipo) :-
-    fim(No),!.
+dfsTipoLimit([Nodo|Caminho], Maxdepth, Tipo):-
+    inicio(Nodo),
+    dfsTipo2Limit(Nodo,[Nodo],Caminho, Tipo, Maxdepth).
 
-depthFirstLimitedT(Caminho,No,S,L,Tipo) :-
-    L > 0,
-    getLixo(No1, Tipo),
-    getArco(No,No1,_),
-    nao(membro(No1,Caminho)),
-    L1 is L - 1,
-    depthFirstLimitedT([No|Caminho],No1,S,L1,Tipo).
+dfsTipo2Limit(Nodo,_,[], Tipo, _):-
+    fim(Nodo).
+
+dfsTipo2Limit(Nodo, Historico, [NodoProx|Caminho], Tipo, Maxdepth):-
+    Maxdepth > 0,
+    getLixo(NodoProx, Tipo),
+    getArco(Nodo, NodoProx,_),
+    nao(membro(NodoProx, Historico)),
+    Max1 is Maxdepth - 1,
+    dfsTipo2Limit(NodoProx, [NodoProx|Historico], Caminho, Tipo, Max1).
 
 %--------------------------------- - - - - - - - - - -  -  -  -  -   -
 % PROCURA INFORMADA
@@ -299,7 +302,7 @@ adjacenteG([Nodo|Caminho]/Custo/_, [ProxNodo,Nodo|Caminho]/NovoCusto/Est) :-
     getArco(Nodo, ProxNodo, PassoCusto),
     nao(member(ProxNodo, Caminho)),
 	NovoCusto is Custo + PassoCusto,
-    estamativa(ProxNodo, Est).
+    estimativa(ProxNodo, Est).
 
 estimativa(Local,Est) :- 
     ponto(Local,Lat1,Lon1,_,_,_),
